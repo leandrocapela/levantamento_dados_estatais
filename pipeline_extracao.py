@@ -2,21 +2,48 @@
 import pandas as pd
 import fitz
 import os
+import re
+import json
 
-def get_pdf_text(file_path, max_pages=10):
+def extract_deterministic_data(file_path):
     """
-    Extrai texto bruto do PDF para processamento.
+    Extrai dados usando padrões de Regex (Regex-based extraction).
     """
     try:
         doc = fitz.open(file_path)
-        text = ""
-        for page in doc[:max_pages]:
-            text += page.get_text()
-        return text
+        text = "".join([page.get_text() for page in doc[:15]])
+        
+        # Exemplo de padrões Regex para Vencimento e ATS
+        patterns = {
+            'vencimento_min': r'(?:Vencimento|Salário)\s*(?:Básico|Mínimo)\D*([\d.,]+)',
+            'periodicidade': r'(Mensal|Horista|Por hora)',
+            'regra_ats': r'(Anuênio|Quinquenio|Adicional por Tempo de Serviço)'
+        }
+        
+        results = {}
+        for key, pattern in patterns.items():
+            match = re.search(pattern, text, re.IGNORECASE)
+            results[key] = match.group(1) if match else "Não encontrado"
+            
+        return results
     except Exception as e:
-        return f"Erro ao ler PDF: {str(e)}"
+        return {"error": str(e)}
 
-def list_files_summary(folder_path):
-    if not os.path.exists(folder_path):
-        return []
-    return os.listdir(folder_path)
+def run_pipeline(input_folder, output_excel):
+    files = [f for f in os.listdir(input_folder) if f.endswith('.pdf')]
+    all_data = []
+    
+    for f in files:
+        print(f"-> Analisando via Regex: {f}")
+        data = extract_deterministic_data(os.path.join(input_folder, f))
+        data['arquivo'] = f
+        all_data.append(data)
+    
+    df = pd.DataFrame(all_data)
+    df.to_excel(output_excel, index=False)
+    print(f"\n✅ Processamento Regex finalizado: {output_excel}")
+
+if __name__ == '__main__':
+    # Para rodar: python pipeline_extracao.py
+    # run_pipeline('./ACTs', 'Resultado_Extração.xlsx')
+    pass
