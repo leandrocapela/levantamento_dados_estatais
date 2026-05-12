@@ -12,8 +12,8 @@ import pandas as pd
 from levantamento_dados_estatais.caminhos_projeto import (
     ARQUIVO_PLANILHA_DADOS_ESTATAIS,
     ARQUIVO_SAIDA_MAPEAMENTO_ARQUIVOS_ESTATAIS,
-    PASTA_DOCUMENTOS_ACORDOS_COLETIVOS_TRABALHO,
-    PASTA_DOCUMENTOS_PLANOS_CARGOS_SALARIOS,
+    PASTA_DOCS_ACORDOS_COLETIVOS_TRABALHO,
+    PASTA_DOCS_PLANOS_CARGOS_SALARIOS,
 )
 from levantamento_dados_estatais.estatal_matching import (
     EstatalFileMatcher,
@@ -37,15 +37,15 @@ def main() -> int:
         help="Caminho para Dados Estatais.xlsx",
     )
     parser.add_argument(
-        "--pasta-documentos-acordos-coletivos-trabalho",
+        "--pasta-docs-acordos-coletivos-trabalho",
         type=str,
-        default=str(PASTA_DOCUMENTOS_ACORDOS_COLETIVOS_TRABALHO),
+        default=str(PASTA_DOCS_ACORDOS_COLETIVOS_TRABALHO),
         help="Pasta com PDFs de acordos coletivos de trabalho",
     )
     parser.add_argument(
-        "--pasta-documentos-planos-cargos-salarios",
+        "--pasta-docs-planos-cargos-salarios",
         type=str,
-        default=str(PASTA_DOCUMENTOS_PLANOS_CARGOS_SALARIOS),
+        default=str(PASTA_DOCS_PLANOS_CARGOS_SALARIOS),
         help="Pasta com PDFs de planos de cargos e salários",
     )
     parser.add_argument("--config", type=str, default=str(ARQUIVO_CONFIGURACAO_PADRAO))
@@ -62,8 +62,8 @@ def main() -> int:
         print(f"Planilha não encontrada: {excel.resolve()}", file=sys.stderr)
         return 1
 
-    pasta_acordos = Path(args.pasta_documentos_acordos_coletivos_trabalho)
-    pasta_planos = Path(args.pasta_documentos_planos_cargos_salarios)
+    pasta_acordos = Path(args.pasta_docs_acordos_coletivos_trabalho)
+    pasta_planos = Path(args.pasta_docs_planos_cargos_salarios)
     for d, label in ((pasta_acordos, "acordos"), (pasta_planos, "planos")):
         if not d.is_dir():
             print(f"Pasta {label} não encontrada: {d.resolve()}", file=sys.stderr)

@@ -49,7 +49,7 @@ Equivalente sem shell: `export PYTHONPATH="$(pwd)/src"` e `python -m levantament
 | `levantamento_dados_estatais.relacionar_arquivos_estatais` | `output/mapeamento_arquivos_estatais.xlsx` |
 | `levantamento_dados_estatais.preencher_planilha_estatais` | Lê `data/planilhas/Dados Estatais.xlsx` → `output/Dados_Estatais_preenchido_auto.xlsx` |
 
-Opções de pastas (por defeito vêm de `caminhos_projeto.py`, pastas em disco `data/docs/…`): `--pasta-documentos-acordos-coletivos-trabalho`, `--pasta-documentos-planos-cargos-salarios`.
+Opções de pastas (por defeito vêm de `caminhos_projeto.py`, pastas em disco `data/docs/…`): `--pasta-docs-acordos-coletivos-trabalho`, `--pasta-docs-planos-cargos-salarios`.
 
 ### `tem_ats` (conservador)
 

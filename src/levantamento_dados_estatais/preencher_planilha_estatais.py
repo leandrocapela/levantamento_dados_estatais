@@ -23,8 +23,8 @@ from levantamento_dados_estatais.caminhos_projeto import (
     ARQUIVO_CONFIGURACAO_ESTATAIS_PADRAO,
     ARQUIVO_PLANILHA_DADOS_ESTATAIS,
     ARQUIVO_SAIDA_PLANILHA_DADOS_ESTATAIS_PREENCHIDA_AUTOMATICAMENTE,
-    PASTA_DOCUMENTOS_ACORDOS_COLETIVOS_TRABALHO,
-    PASTA_DOCUMENTOS_PLANOS_CARGOS_SALARIOS,
+    PASTA_DOCS_ACORDOS_COLETIVOS_TRABALHO,
+    PASTA_DOCS_PLANOS_CARGOS_SALARIOS,
 )
 from levantamento_dados_estatais.estatal_matching import (
     EstatalFileMatcher,
@@ -157,14 +157,14 @@ def main() -> int:
     )
     parser.add_argument("--planilha", type=str, default="Planilha1")
     parser.add_argument(
-        "--pasta-documentos-acordos-coletivos-trabalho",
+        "--pasta-docs-acordos-coletivos-trabalho",
         type=str,
-        default=str(PASTA_DOCUMENTOS_ACORDOS_COLETIVOS_TRABALHO),
+        default=str(PASTA_DOCS_ACORDOS_COLETIVOS_TRABALHO),
     )
     parser.add_argument(
-        "--pasta-documentos-planos-cargos-salarios",
+        "--pasta-docs-planos-cargos-salarios",
         type=str,
-        default=str(PASTA_DOCUMENTOS_PLANOS_CARGOS_SALARIOS),
+        default=str(PASTA_DOCS_PLANOS_CARGOS_SALARIOS),
     )
     parser.add_argument("--config", type=str, default=str(ARQUIVO_CONFIGURACAO_ESTATAIS_PADRAO))
     args = parser.parse_args()
@@ -174,8 +174,8 @@ def main() -> int:
         print(f"Origem não encontrada: {origem}", file=sys.stderr)
         return 1
 
-    pasta_acordos = Path(args.pasta_documentos_acordos_coletivos_trabalho)
-    pasta_planos = Path(args.pasta_documentos_planos_cargos_salarios)
+    pasta_acordos = Path(args.pasta_docs_acordos_coletivos_trabalho)
+    pasta_planos = Path(args.pasta_docs_planos_cargos_salarios)
     cfg = Path(args.config)
     if not cfg.is_file():
         print(f"Config: {cfg} não encontrada", file=sys.stderr)

@@ -193,14 +193,14 @@ def main(argv: list[str] | None = None) -> int:
     from levantamento_dados_estatais.caminhos_projeto import (
         ARQUIVO_SAIDA_EXTRACAO_PIPELINE_REGEX,
         DIRETORIO_OUTPUT,
-        PASTA_DOCUMENTOS_ACORDOS_COLETIVOS_TRABALHO,
+        PASTA_DOCS_ACORDOS_COLETIVOS_TRABALHO,
     )
 
     parser = argparse.ArgumentParser(description="Pipeline de extração determinística (ACT/PCS).")
     parser.add_argument(
         "--pasta",
         type=str,
-        default=str(PASTA_DOCUMENTOS_ACORDOS_COLETIVOS_TRABALHO),
+        default=str(PASTA_DOCS_ACORDOS_COLETIVOS_TRABALHO),
         help="Pasta com PDFs",
     )
     parser.add_argument(

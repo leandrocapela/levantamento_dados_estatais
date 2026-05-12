@@ -10,11 +10,11 @@ PASTA_CONFIGURACAO: Path = RAIZ_REPOSITORIO / "config"
 ARQUIVO_CONFIGURACAO_ESTATAIS_PADRAO: Path = PASTA_CONFIGURACAO / "estatal_arquivo_config.yaml"
 
 PASTA_DADOS: Path = RAIZ_REPOSITORIO / "data"
-PASTA_DOCUMENTOS_ACORDOS_COLETIVOS_TRABALHO: Path = (
-    PASTA_DADOS / "documentos" / "acordos_coletivos_trabalho"
+PASTA_DOCS_ACORDOS_COLETIVOS_TRABALHO: Path = (
+    PASTA_DADOS / "docs" / "acordos_coletivos_trabalho"
 )
-PASTA_DOCUMENTOS_PLANOS_CARGOS_SALARIOS: Path = (
-    PASTA_DADOS / "documentos" / "planos_cargos_salarios"
+PASTA_DOCS_PLANOS_CARGOS_SALARIOS: Path = (
+    PASTA_DADOS / "docs" / "planos_cargos_salarios"
 )
 PASTA_PLANILHAS: Path = PASTA_DADOS / "planilhas"
 ARQUIVO_PLANILHA_DADOS_ESTATAIS: Path = PASTA_PLANILHAS / "Dados Estatais.xlsx"
