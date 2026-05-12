@@ -1,0 +1,55 @@
+# Ligação arquivo PDF ↔ coluna ESTATAL de Dados Estatais.xlsx (nome exato da célula).
+#
+# NPCS = Novo Plano de Cargos e Salários (instrumento). O PDF abaixo foi confirmado como BNDES.
+#
+# substrings: trechos no nome do arquivo (minúsculas / sem acentos na comparação).
+# arquivo_para_estatal: só pares arquivo → ESTATAL confirmados (PDF/SEI).
+
+arquivo_para_estatal:
+  "NPCS_2025_versão+site_com+regulamento.pdf": "BNDES"
+
+substrings:
+  ABGF: [abgf]
+  Amazul: [amazul]
+  BASA: [basa, "banco da amaz", "banco-da-amaz"]
+  BB: [bb act, "bb -"]
+  BNB: [bnb, act-bnb]
+  BNDES: [bndes]
+  CBTU: [cbtu]
+  CDC: [cdc]
+  CDP: [cdp]
+  CDRJ: [cdrj]
+  CMB (Casa da Moeda): [cmb, moeda]
+  CPRM (SGB): [cprm]
+  Caixa: [caixa]
+  Ceagesp: [ceagesp]
+  CeasaMinas: [ceasaminas]
+  Codeba: [codeba]
+  Codern: [codern]
+  Codevasf: [codevasf]
+  Conab: [conab]
+  Correios: [correios]
+  Dataprev: [dataprev]
+  EBC: [ebc]
+  ENBPar (Eletronuclear): [eletronuclear]
+  ENBPar (INB): [inb_pcs, inb pcs, inb-pcs]
+  EPE: [epe]
+  Ebserh: [ebserh]
+  Embrapa: [embrapa]
+  Emgea: [emgea]
+  Emgepron: [emgepron]
+  Finep: [finep]
+  GHC (Conceição): [ghc]
+  HCPA: [hcpa]
+  Hemobrás: [hemobr]
+  Imbel: [imbel]
+  Infra S/A (Valec): [valec]
+  Infraero: [infraero]
+  NAV Brasil: [nav-brasil, nav_brasil, nav brasil]
+  Nuclep: [nuclep]
+  PPSA: [ppsa]
+  Petrobras: [petrobras]
+  SPA: ["spa(", santos port]
+  Serpro: [serpro]
+  Telebras: [telebras]
+  Trensurb: [trensurb]

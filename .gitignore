@@ -1,2 +1,7 @@
 __pycache__/
+**/__pycache__/
 .config/
+.venv/
+# Saídas regeneráveis (mantém output/.gitkeep)
+output/*
+!output/.gitkeep
