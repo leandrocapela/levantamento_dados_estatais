@@ -1,10 +1,15 @@
 """
 Relaciona nomes de arquivos PDF (ACT / PCS) à coluna ESTATAL de Dados Estatais.xlsx.
 
-Ordem de decisão:
-1. Mapeamento explícito por nome de arquivo (config YAML).
-2. Maior substring configurada (com regra especial para gatilhos curtos).
-3. Fuzzy partial ratio (rapidfuzz) acima de um limiar, só se ainda não houver match.
+Ordem de decisão (simples):
+1. Mesmos gatilhos de `substrings` no **nome** do arquivo (substring mais longa ganha).
+2. Se não bater: **fuzzy** só no nome (partial_ratio do nome da estatal vs nome do arquivo).
+3. Se ainda não bater e existir `caminho_pdf`: extrai texto do PDF com
+   `extrair_texto_pdf` (camada nativa por página; OCR quando a página tem pouco texto)
+   e aplica de novo os **mesmos** gatilhos de `substrings` ao texto reunido.
+
+Não há mapeamento nome-de-arquivo → estatal no YAML; não há bloco separado de regras
+só para o corpo do PDF — os gatilhos de `substrings` servem para nome e para texto.
 """
 from __future__ import annotations
 
@@ -59,7 +64,10 @@ def _compile_short_trigger_pattern(trigger_folded: str) -> re.Pattern[str]:
 @dataclass(frozen=True)
 class MatchResult:
     estatal: str | None
-    metodo: str  # explicit | substring | fuzzy | none
+    metodo: str  # substring | fuzzy | texto_pdf | none
+
+
+_MAX_PAGINAS_LEITURA_CONTEUDO: int = 12
 
 
 class EstatalFileMatcher:
@@ -75,16 +83,6 @@ class EstatalFileMatcher:
         self.fuzzy_min_score = fuzzy_min_score
         path = config_path or ARQUIVO_CONFIGURACAO_ESTATAIS_PADRAO
         raw = _load_yaml_config(path)
-
-        arquivo_para = raw.get("arquivo_para_estatal") or {}
-        self._explicit_folded: dict[str, str] = {}
-        for nome_arquivo, estatal in arquivo_para.items():
-            if estatal not in self.estatal_set:
-                raise ValueError(
-                    f"ESTATAL desconhecida em arquivo_para_estatal: {estatal!r} "
-                    f"(arquivo {nome_arquivo!r})"
-                )
-            self._explicit_folded[fold_for_match(str(nome_arquivo))] = estatal
 
         substrings: dict[str, list[str]] = raw.get("substrings") or {}
         self._triggers: list[tuple[str, str, re.Pattern[str] | None]] = []
@@ -105,31 +103,32 @@ class EstatalFileMatcher:
 
         self._triggers.sort(key=lambda x: len(x[1]), reverse=True)
 
-    def match_filename(self, filename: str) -> MatchResult:
-        base = os.path.basename(filename)
-        folded_name = fold_for_match(base)
-
-        if folded_name in self._explicit_folded:
-            e = self._explicit_folded[folded_name]
-            return MatchResult(e, "explicit")
-
+    def _best_substring_estatal(self, folded_haystack: str) -> str | None:
         best_estatal: str | None = None
         best_len = 0
         for estatal, trig, pat in self._triggers:
             if pat is not None:
-                if not pat.search(folded_name):
+                if not pat.search(folded_haystack):
                     continue
                 hit_len = len(trig)
             else:
-                if trig not in folded_name:
+                if trig not in folded_haystack:
                     continue
                 hit_len = len(trig)
             if hit_len > best_len:
                 best_len = hit_len
                 best_estatal = estatal
+        return best_estatal
 
-        if best_estatal is not None:
-            return MatchResult(best_estatal, "substring")
+    def match_filename(
+        self, filename: str, *, caminho_pdf: Path | None = None
+    ) -> MatchResult:
+        base = os.path.basename(filename)
+        folded_name = fold_for_match(base)
+
+        by_name = self._best_substring_estatal(folded_name)
+        if by_name is not None:
+            return MatchResult(by_name, "substring")
 
         best_score = 0
         best_fuzzy: str | None = None
@@ -144,6 +143,20 @@ class EstatalFileMatcher:
 
         if best_fuzzy is not None and best_score >= self.fuzzy_min_score:
             return MatchResult(best_fuzzy, "fuzzy")
+
+        if caminho_pdf is not None and caminho_pdf.is_file():
+            try:
+                from levantamento_dados_estatais.pdf_texto import extrair_texto_pdf
+
+                corpo = extrair_texto_pdf(
+                    str(caminho_pdf), max_paginas=_MAX_PAGINAS_LEITURA_CONTEUDO
+                )
+            except Exception:
+                corpo = ""
+            folded_body = fold_for_match(corpo)
+            by_pdf = self._best_substring_estatal(folded_body)
+            if by_pdf is not None:
+                return MatchResult(by_pdf, "texto_pdf")
 
         return MatchResult(None, "none")
 

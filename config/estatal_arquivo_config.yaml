@@ -1,12 +1,13 @@
-# Ligação arquivo PDF ↔ coluna ESTATAL de Dados Estatais.xlsx (nome exato da célula).
+# Gatilhos → coluna ESTATAL (valores iguais à planilha).
 #
-# NPCS = Novo Plano de Cargos e Salários (instrumento). O PDF abaixo foi confirmado como BNDES.
+# Fluxo (ver `estatal_matching.py`):
+#  1) Estes gatilhos aplicam-se ao **nome** do arquivo; o mais longo que bater define a estatal.
+#  2) Se não bater, fuzzy só no nome.
+#  3) Se ainda não bater, lê-se o PDF (texto nativo + OCR quando necessário) e aplicam-se
+#     **os mesmos** gatilhos ao texto extraído.
 #
-# substrings: trechos no nome do arquivo (minúsculas / sem acentos na comparação).
-# arquivo_para_estatal: só pares arquivo → ESTATAL confirmados (PDF/SEI).
-
-arquivo_para_estatal:
-  "NPCS_2025_versão+site_com+regulamento.pdf": "BNDES"
+# Inclua aqui tanto abreviações típicas de nomes de arquivo quanto frases que só aparecem no corpo
+# do PDF (ex.: "banco nacional de desenvolvimento economico" para PDFs com nome genérico).
 
 substrings:
   ABGF: [abgf]
@@ -14,42 +15,62 @@ substrings:
   BASA: [basa, "banco da amaz", "banco-da-amaz"]
   BB: [bb act, "bb -"]
   BNB: [bnb, act-bnb]
-  BNDES: [bndes]
+  BNDES:
+    - bndes
+    - banco nacional de desenvolvimento economico
   CBTU: [cbtu]
   CDC: [cdc]
   CDP: [cdp]
   CDRJ: [cdrj]
   CMB (Casa da Moeda): [cmb, moeda]
-  CPRM (SGB): [cprm]
+  CPRM (SGB):
+    - cprm
+    - companhia de pesquisa de recursos minerais
+    - servico geologico do brasil
   Caixa: [caixa]
-  Ceagesp: [ceagesp]
+  Ceagesp:
+    - ceagesp
+    - companhia de entrepostos e armazens gerais de sao paulo
   CeasaMinas: [ceasaminas]
   Codeba: [codeba]
   Codern: [codern]
   Codevasf: [codevasf]
   Conab: [conab]
-  Correios: [correios]
+  Correios:
+    - correios
+    - empresa brasileira de correios e telegrafos
+    - correios e telegrafos
   Dataprev: [dataprev]
   EBC: [ebc]
   ENBPar (Eletronuclear): [eletronuclear]
   ENBPar (INB): [inb_pcs, inb pcs, inb-pcs]
-  EPE: [epe]
+  EPE: [epe, empresa de pesquisa energetica]
   Ebserh: [ebserh]
   Embrapa: [embrapa]
-  Emgea: [emgea]
+  Emgea: [emgea, empresa gestora de ativos, emgea.gov]
   Emgepron: [emgepron]
-  Finep: [finep]
+  Finep: [finep, financiadora de estudos e projetos]
   GHC (Conceição): [ghc]
-  HCPA: [hcpa]
-  Hemobrás: [hemobr]
+  HCPA: [hcpa, hospital de clinicas de porto alegre]
+  Hemobrás:
+    - hemobr
+    - hemoderivados
+    - brasileira de hemoderivados
   Imbel: [imbel]
   Infra S/A (Valec): [valec]
-  Infraero: [infraero]
+  Infraero:
+    - infraero
+    - acordo coletivo de trabalho infraero
   NAV Brasil: [nav-brasil, nav_brasil, nav brasil]
   Nuclep: [nuclep]
   PPSA: [ppsa]
-  Petrobras: [petrobras]
-  SPA: ["spa(", santos port]
+  Petrobras: [petrobras, plano petros]
+  SPA:
+    - "spa("
+    - santos port
+    - autoridade portuaria de santos
+    - autoridade portuaria de santos s.a
+    - "aps, cnpj"
   Serpro: [serpro]
-  Telebras: [telebras]
+  Telebras: [telebras, telecomunicacoes brasileiras]
   Trensurb: [trensurb]

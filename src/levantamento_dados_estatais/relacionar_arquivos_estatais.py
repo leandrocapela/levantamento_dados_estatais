@@ -80,7 +80,7 @@ def main() -> int:
     rows: list[dict[str, object]] = []
     for label, folder in (("ACT", pasta_acordos), ("PCS", pasta_planos)):
         for name in scan_folder_pdf_basenames(folder):
-            res = matcher.match_filename(name)
+            res = matcher.match_filename(name, caminho_pdf=folder / name)
             rows.append(
                 {
                     "tipo": label,

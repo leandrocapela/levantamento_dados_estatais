@@ -2,8 +2,9 @@ import os
 import re
 import unicodedata
 
-import fitz
 import pandas as pd
+
+from levantamento_dados_estatais.pdf_texto import extrair_texto_pdf
 
 
 def _normalize_to_nfc(text: str) -> str:
@@ -13,14 +14,9 @@ def _normalize_to_nfc(text: str) -> str:
 
 def extract_plain_text_from_pdf(file_path: str, max_pages: int | None = None) -> str:
     """
-    Concatenate plain text from PDF pages using PyMuPDF.
-    If max_pages is None, reads the entire document; otherwise caps at N first pages.
+    Texto das páginas do PDF: PyMuPDF e, em páginas “vazias”, OCR (Tesseract) via `pdf_texto`.
     """
-    doc = fitz.open(file_path)
-    n = len(doc) if max_pages is None else min(len(doc), max_pages)
-    parts = [doc[i].get_text() for i in range(n)]
-    doc.close()
-    return _normalize_to_nfc("".join(parts))
+    return _normalize_to_nfc(extrair_texto_pdf(file_path, max_paginas=max_pages))
 
 
 def _regex_match_start_index(pattern: str, haystack: str) -> int | None:
@@ -45,6 +41,117 @@ def _has_explicit_no_ats(lower_text: str) -> bool:
     return any(p.search(lower_text) for p in _EXPLICIT_NO_ATS_PATTERNS)
 
 
+def _squash_whitespace(text: str) -> str:
+    return re.sub(r"\s+", " ", text or "").strip()
+
+
+def _snippet_around(lower: str, original: str, needle: str, radius: int = 260) -> str | None:
+    idx = lower.find(needle)
+    if idx == -1:
+        return None
+    a = max(0, idx - 50)
+    b = min(len(original), idx + radius)
+    return _squash_whitespace(original[a:b])
+
+
+def _extrair_gratificacoes(lower: str, text: str) -> str | None:
+    """Captura trechos com gratificações (janelas largas para notas e quebras de linha)."""
+    needles = (
+        "gratificação de função",
+        "gratificacao de funcao",
+        "gratificação de atividade",
+        "gratificacao de atividade",
+        "gratificação de titularidade",
+        "gratificacao de titularidade",
+        "gratificação de cargo",
+        "gratificacao de cargo",
+        "gratificação de encargo",
+        "gratificacao de encargo",
+        "gratificação normativa",
+        "gratificacao normativa",
+    )
+    found: list[str] = []
+    seen: set[str] = set()
+    for n in needles:
+        if n in lower:
+            sn = _snippet_around(lower, text, n, 320)
+            if sn and sn not in seen:
+                seen.add(sn)
+                found.append(sn[:450])
+    for m in re.finditer(
+        r"gratifica[cç][aã]o\s+de\s+[^.\n]{3,80}(?:\.{0,1}|\s*)\s*(?:r\$\s*[\d.,\s]+|\d{1,2}(?:[.,]\d+)?\s*%)?",
+        lower,
+        re.I,
+    ):
+        frag = _squash_whitespace(text[m.start() : min(len(text), m.end() + 140)])
+        if frag not in seen and len(frag) > 15:
+            seen.add(frag)
+            found.append(frag[:450])
+    return " | ".join(found[:6]) if found else None
+
+
+def _extrair_salario_grade(lower: str, text: str) -> str | None:
+    """Resumo textual: piso, teto, tabela/faixa quando houver âncoras no texto."""
+    parts: list[str] = []
+    anchors = (
+        ("Piso", "piso salarial"),
+        ("Piso", "piso da carreira"),
+        ("Teto", "teto salarial"),
+        ("Teto", "teto da"),
+        ("Tabela", "tabela salarial"),
+        ("Faixa", "faixa salarial"),
+        ("Estrutura", "estrutura remuneratória"),
+        ("Estrutura", "estrutura salarial"),
+    )
+    seen_sub: set[str] = set()
+    for label, needle in anchors:
+        if needle not in lower:
+            continue
+        sn = _snippet_around(lower, text, needle, 240)
+        if not sn:
+            continue
+        key = sn[:80]
+        if key in seen_sub:
+            continue
+        seen_sub.add(key)
+        parts.append(f"{label}: {sn[:380]}")
+    if not parts:
+        m = re.search(
+            r"vencimentos?\s+b[aá]sicos?.{0,500}?r\$\s*[\d.,\s]+(?:\s*(?:a|at[eé])\s*r\$\s*[\d.,\s]+)?",
+            lower,
+            re.I | re.DOTALL,
+        )
+        if m:
+            parts.append(_squash_whitespace(text[m.start() : m.end()])[:520])
+    return " | ".join(parts[:5]) if parts else None
+
+
+def _extrair_ats_percentual_e_teto(lower: str, text: str) -> tuple[str | None, str | None]:
+    percent: str | None = None
+    for m in re.finditer(
+        r"(?:anu[eê]nio|quinqu[eê]nio|\bats\b|adicional\s+por\s+tempo\s+de\s+servi[cç]o)[^\n\r%.]{0,220}?(\d{1,2}(?:[.,]\d+)?)\s*%",
+        lower,
+        re.I,
+    ):
+        percent = m.group(1).replace(",", ".")
+        break
+    teto: str | None = None
+    for needle in (
+        "teto do ats",
+        "teto do adicional",
+        "teto acumulado",
+        "limite de incorporação",
+        "incorporação máxima",
+        "incorporacao maxima",
+        "limite do adicional",
+    ):
+        if needle in lower:
+            teto = _snippet_around(lower, text, needle, 280)
+            if teto:
+                break
+    return percent, teto
+
+
 def build_act_pcs_schema_from_extracted_text(extracted_text: str, file_path_for_metadata: str) -> dict:
     """
     Build the deterministic ACT/PCS schema dict from already-extracted PDF text.
@@ -52,6 +159,9 @@ def build_act_pcs_schema_from_extracted_text(extracted_text: str, file_path_for_
 
     tem_ats: "SIM" com evidência positiva; "NÃO" só com cláusula explícita de inexistência/supressão;
              caso contrário None (indeterminado — não inferir ausência por silêncio).
+
+    Inclui ainda resumos heurísticos dos **três pilares** de remuneração: `salario_grade_resumo`,
+    `ats_percentual`, `ats_teto_resumo`, `gratificacoes_resumo` (texto; refinamento contínuo).
     """
     normalized = _normalize_to_nfc(extracted_text)
     lower = normalized.lower()
@@ -121,11 +231,19 @@ def build_act_pcs_schema_from_extracted_text(extracted_text: str, file_path_for_
             break
         niv_carreira = None
 
+    salario_grade_resumo = _extrair_salario_grade(lower, normalized)
+    ats_percentual, ats_teto_resumo = _extrair_ats_percentual_e_teto(lower, normalized)
+    gratificacoes_resumo = _extrair_gratificacoes(lower, normalized)
+
     return {
         "niv_carreira": niv_carreira,
         "tem_ats": tem_ats,
         "tipo_ats": tipo_ats,
         "ano_pcs": ano_pcs,
+        "salario_grade_resumo": salario_grade_resumo,
+        "ats_percentual": ats_percentual,
+        "ats_teto_resumo": ats_teto_resumo,
+        "gratificacoes_resumo": gratificacoes_resumo,
     }
 
 
@@ -156,6 +274,10 @@ def extract_deterministic_compensation_fields(file_path: str, max_pages: int | N
                 "tem_ats": act_pcs_schema["tem_ats"],
                 "tipo_ats": act_pcs_schema["tipo_ats"],
                 "ano_pcs": act_pcs_schema["ano_pcs"],
+                "salario_grade_resumo": act_pcs_schema["salario_grade_resumo"],
+                "ats_percentual": act_pcs_schema["ats_percentual"],
+                "ats_teto_resumo": act_pcs_schema["ats_teto_resumo"],
+                "gratificacoes_resumo": act_pcs_schema["gratificacoes_resumo"],
             }
         )
         return row

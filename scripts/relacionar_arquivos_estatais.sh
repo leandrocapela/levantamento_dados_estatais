@@ -9,4 +9,7 @@ if [[ ! -d .venv ]]; then
 fi
 # shellcheck source=/dev/null
 source .venv/bin/activate
-exec python -m levantamento_dados_estatais.relacionar_arquivos_estatais "$@"
+# shellcheck source=pastas_locais.inc.sh
+source "$ROOT/scripts/pastas_locais.inc.sh"
+# Bash 3.2 (macOS) + set -u: "${arr[@]}" com array vazio falha; usar expansão condicional.
+exec python -m levantamento_dados_estatais.relacionar_arquivos_estatais ${LEV_DADOS_EXTRA_PASTAS[@]+"${LEV_DADOS_EXTRA_PASTAS[@]}"} "$@"

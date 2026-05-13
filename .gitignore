@@ -2,6 +2,17 @@ __pycache__/
 **/__pycache__/
 .config/
 .venv/
+.DS_Store
+**/.DS_Store
 # Saídas regeneráveis (mantém output/.gitkeep)
 output/*
 !output/.gitkeep
+
+# PDFs em data/docs (cópia local; não versionar)
+data/docs/**/*.pdf
+
+# Variáveis locais por máquina (.env.example na raiz é versionado)
+.env
+
+# Cursor (IDE): estado local; regras do projeto em AGENTS.md
+.cursor/
